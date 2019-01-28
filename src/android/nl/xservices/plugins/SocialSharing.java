@@ -190,7 +190,7 @@ public class SocialSharing extends CordovaPlugin {
 
         List<LabeledIntent> labeledIntentList = new ArrayList();
         for (ResolveInfo info : emailAppList) {
-          draft.setAction(Intent.ACTION_SEND_MULTIPLE);
+          draft.setAction(Intent.ACTION_SEND);
           draft.setType("application/octet-stream");
 
           draft.setComponent(new ComponentName(info.activityInfo.packageName, info.activityInfo.name));
@@ -269,7 +269,7 @@ public class SocialSharing extends CordovaPlugin {
       public void run() {
         String message = msg;
         final boolean hasMultipleAttachments = files.length() > 1;
-        final Intent sendIntent = new Intent(hasMultipleAttachments ? Intent.ACTION_SEND_MULTIPLE : Intent.ACTION_SEND);
+        final Intent sendIntent = new Intent(hasMultipleAttachments ? Intent.ACTION_SEND : Intent.ACTION_SEND);
         final Intent receiverIntent = new Intent(cordova.getActivity().getApplicationContext(), ShareChooserPendingIntent.class);
         final PendingIntent pendingIntent = PendingIntent.getBroadcast(cordova.getActivity().getApplicationContext(), 0, receiverIntent, PendingIntent.FLAG_UPDATE_CURRENT);
         sendIntent.addFlags(Intent.FLAG_ACTIVITY_CLEAR_WHEN_TASK_RESET);
