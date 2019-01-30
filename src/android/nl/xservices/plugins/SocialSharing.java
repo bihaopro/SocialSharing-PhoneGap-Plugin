@@ -18,6 +18,12 @@ import android.util.Base64;
 import android.view.Gravity;
 import android.widget.Toast;
 import android.util.Log;
+import android.provider.MediaStore;
+
+import android.content.ContentResolver;
+import android.database.Cursor;
+import android.media.ExifInterface;
+import android.os.Bundle;
 
 import org.apache.cordova.CallbackContext;
 import org.apache.cordova.CordovaInterface;
@@ -250,6 +256,32 @@ public class SocialSharing extends CordovaPlugin {
     return doSendIntent(callbackContext, msg, subject, files, url, appPackageName, chooserTitle, peek, boolResult, null);
   }
 
+  public static Uri getImageContentUri(Context context, File imageFile) {
+    String filePath = imageFile.getAbsolutePath();
+    Cursor cursor = context.getContentResolver().query(MediaStore.Images.Media.EXTERNAL_CONTENT_URI,
+            new String[] { MediaStore.Images.Media._ID }, MediaStore.Images.Media.DATA + "=? ",
+            new String[] { filePath }, null);
+    Uri uri = null;
+
+    if (cursor != null) {
+        if (cursor.moveToFirst()) {
+            int id = cursor.getInt(cursor.getColumnIndex(MediaStore.MediaColumns._ID));
+            Uri baseUri = Uri.parse("content://media/external/images/media");
+            uri = Uri.withAppendedPath(baseUri, "" + id);
+        }
+
+        cursor.close();
+    }
+
+    if (uri == null) {
+        ContentValues values = new ContentValues();
+        values.put(MediaStore.Images.Media.DATA, filePath);
+        uri = context.getContentResolver().insert(MediaStore.Images.Media.EXTERNAL_CONTENT_URI, values);
+    }
+
+    return uri;
+}
+
   private boolean doSendIntent(
       final CallbackContext callbackContext,
       final String msg,
@@ -276,13 +308,15 @@ public class SocialSharing extends CordovaPlugin {
 
         try {
           if (files.length() > 0 && !"".equals(files.getString(0))) {
+
             final String dir = getDownloadDir();
             if (dir != null) {
               ArrayList<Uri> fileUris = new ArrayList<Uri>();
               Uri fileUri = null;
               for (int i = 0; i < files.length(); i++) {
                 fileUri = getFileUriAndSetType(sendIntent, dir, files.getString(i), subject, i);
-                fileUri = FileProvider.getUriForFile(webView.getContext(), cordova.getActivity().getPackageName()+".sharing.provider", new File(fileUri.getPath()));
+                // fileUri = FileProvider.getUriForFile(webView.getContext(), cordova.getActivity().getPackageName()+".sharing.provider", new File(fileUri.getPath()));
+                fileUri = getImageContentUri(webView.getContext(), new File(fileUri.getPath()));
                 fileUris.add(fileUri);
               }
               if (!fileUris.isEmpty()) {
@@ -295,6 +329,8 @@ public class SocialSharing extends CordovaPlugin {
             } else {
               sendIntent.setType("text/plain");
             }
+
+
           } else {
             sendIntent.setType("text/plain");
           }
